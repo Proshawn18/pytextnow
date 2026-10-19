@@ -13,14 +13,15 @@ Or run directly via CLI:
   python tools/direct_http_login.py --username user@email.com --password my_password
 """
 
-import sys
-import os
 import argparse
-import json
-import re
 import getpass
+import json
+import os
+import re
+import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 import requests
 from dotenv import load_dotenv
 
@@ -68,12 +69,14 @@ def attempt_login(
     session = requests.Session()
     if cookies:
         session.cookies.update(cookies)
-    session.headers.update({
-        "User-Agent": ua,
-        "Origin": "https://www.textnow.com",
-        "Referer": "https://www.textnow.com/login",
-        "Accept": "application/json, text/plain, */*",
-    })
+    session.headers.update(
+        {
+            "User-Agent": ua,
+            "Origin": "https://www.textnow.com",
+            "Referer": "https://www.textnow.com/login",
+            "Accept": "application/json, text/plain, */*",
+        }
+    )
 
     # Step 1: Initial handshake to retrieve CSRF tokens & session cookies
     if verbose:
@@ -91,11 +94,13 @@ def attempt_login(
             print("[!] Failed to obtain CSRF token from initial page.")
         return False
 
-    session.headers.update({
-        "x-csrf-token": csrf_token,
-        "x-xsrf-token": csrf_token,
-        "Content-Type": "application/json",
-    })
+    session.headers.update(
+        {
+            "x-csrf-token": csrf_token,
+            "x-xsrf-token": csrf_token,
+            "Content-Type": "application/json",
+        }
+    )
 
     # Step 2: Post credentials to /api/sessions
     if verbose:
@@ -107,7 +112,9 @@ def attempt_login(
     }
 
     try:
-        resp = session.post("https://www.textnow.com/api/sessions", json=payload, timeout=15)
+        resp = session.post(
+            "https://www.textnow.com/api/sessions", json=payload, timeout=15
+        )
     except Exception as e:
         if verbose:
             print(f"[!] Network error submitting login: {e}")
@@ -125,9 +132,12 @@ def attempt_login(
         # Save session to ~/.pythontextnow/
         try:
             from pythontextnow.util.SessionManager import SessionManager
+
             SessionManager.save_session(username, session.cookies.get_dict(), ua)
             if verbose:
-                print(f"[+] Saved session to SessionManager (~/.pythontextnow/session_{username}.json)")
+                print(
+                    f"[+] Saved session to SessionManager (~/.pythontextnow/session_{username}.json)"
+                )
         except Exception as e:
             if verbose:
                 print(f"[!] Note: Could not save to SessionManager: {e}")
@@ -137,8 +147,8 @@ def attempt_login(
         if update_env and env_file.exists() and sid:
             try:
                 content = env_file.read_text(encoding="utf-8")
-                pattern = r'TEXTNOW_SID_COOKIE\s*=\s*[^\r\n]+'
-                new_line = f'TEXTNOW_SID_COOKIE={sid}'
+                pattern = r"TEXTNOW_SID_COOKIE\s*=\s*[^\r\n]+"
+                new_line = f"TEXTNOW_SID_COOKIE={sid}"
                 if re.search(pattern, content):
                     updated_content = re.sub(pattern, new_line, content)
                 else:
@@ -179,20 +189,32 @@ def attempt_login(
             print("=" * 60)
             print(" This TextNow account was registered with Apple Sign-In.")
             print(" It has no native password stored on TextNow.")
-            print(" Solution: Use extract_from_bundle.py to copy session from your browser.")
+            print(
+                " Solution: Use extract_from_bundle.py to copy session from your browser."
+            )
             print("=" * 60)
         elif is_perimeterx:
             print("\n" + "=" * 60)
             print(" DIAGNOSIS: PERIMETERX BOT CHALLENGE (HTTP 403)")
             print("=" * 60)
-            print(" TextNow's WAF (PerimeterX/HUMAN Security) blocked this raw HTTP request")
-            print(" because it lacks client-side browser telemetry (canvas/WebGL/mouse).")
+            print(
+                " TextNow's WAF (PerimeterX/HUMAN Security) blocked this raw HTTP request"
+            )
+            print(
+                " because it lacks client-side browser telemetry (canvas/WebGL/mouse)."
+            )
             print(" ")
             print(" Solutions:")
-            print("  1. Recommended Flow: Use 'tools/extract_from_bundle.py' once to copy")
-            print("     cookies from your browser, then run 'session_keepalive.py' to keep")
+            print(
+                "  1. Recommended Flow: Use 'tools/extract_from_bundle.py' once to copy"
+            )
+            print(
+                "     cookies from your browser, then run 'session_keepalive.py' to keep"
+            )
             print("     the session alive indefinitely without logging in again.")
-            print("  2. Telemetry Cookie: If using a bot-solver proxy, pass your active")
+            print(
+                "  2. Telemetry Cookie: If using a bot-solver proxy, pass your active"
+            )
             print("     _px3 cookie via the cookies parameter.")
             print("=" * 60)
 
@@ -200,10 +222,14 @@ def attempt_login(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Direct HTTP Login to TextNow (Static Utility)")
+    parser = argparse.ArgumentParser(
+        description="Direct HTTP Login to TextNow (Static Utility)"
+    )
     parser.add_argument("--username", default=None, help="TextNow username or email")
     parser.add_argument("--password", default=None, help="TextNow account password")
-    parser.add_argument("--update-env", action="store_true", help="Update .env file on success")
+    parser.add_argument(
+        "--update-env", action="store_true", help="Update .env file on success"
+    )
     args = parser.parse_args()
 
     print("=" * 60)

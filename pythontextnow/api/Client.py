@@ -80,7 +80,9 @@ class Client:
             if xsrf:
                 session_cookies["XSRF-TOKEN"] = xsrf
 
-        xsrf_token = session_cookies.get("XSRF-TOKEN") or session_cookies.get("_csrf", "")
+        xsrf_token = session_cookies.get("XSRF-TOKEN") or session_cookies.get(
+            "_csrf", ""
+        )
 
         headers = {
             "user-agent": ua,

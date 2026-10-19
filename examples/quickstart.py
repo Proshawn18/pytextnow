@@ -14,11 +14,12 @@ Demonstrates primary use cases using the unified TextNow client:
 import os
 import sys
 import time
+
 from dotenv import load_dotenv
 
 from pythontextnow import TextNow
 from pythontextnow.enum import MessageDirection
-from pythontextnow.model import TextMessage, MultiMediaMessage
+from pythontextnow.model import MultiMediaMessage, TextMessage
 
 # ---------------------------------------------------------------------------
 # 1. Grab environment variables and pass explicitly to TextNow
@@ -62,7 +63,11 @@ def read_conversation_history(tn: TextNow, limit: int = 5):
     print(f"\n--- 3. Recent Messages (Last {limit}) ---")
     messages = tn.get_messages(phone_number=RECIPIENT_PHONE, limit=limit)
     for msg in messages:
-        direction = "Outgoing (You)" if msg.message_direction == MessageDirection.OUTGOING else "Incoming"
+        direction = (
+            "Outgoing (You)"
+            if msg.message_direction == MessageDirection.OUTGOING
+            else "Incoming"
+        )
         time_str = msg.datetime_.strftime("%Y-%m-%d %H:%M:%S")
 
         if isinstance(msg, TextMessage):

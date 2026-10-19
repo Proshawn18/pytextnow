@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import Optional, Tuple
+
 import requests
 
 DEFAULT_USER_AGENT = (
@@ -53,7 +54,9 @@ class SessionManager:
         return {}
 
     @classmethod
-    def save_session(cls, username: str, cookies: dict, user_agent: Optional[str] = None) -> None:
+    def save_session(
+        cls, username: str, cookies: dict, user_agent: Optional[str] = None
+    ) -> None:
         if not cookies:
             return
         data = {
@@ -71,7 +74,9 @@ class SessionManager:
             pass
 
     @classmethod
-    def fetch_csrf_tokens(cls, sid_cookie: str, user_agent: Optional[str] = None) -> Tuple[dict, Optional[str]]:
+    def fetch_csrf_tokens(
+        cls, sid_cookie: str, user_agent: Optional[str] = None
+    ) -> Tuple[dict, Optional[str]]:
         """
         Visits https://www.textnow.com/messaging with the connect.sid cookie
         to fetch XSRF-TOKEN and _csrf cookies.

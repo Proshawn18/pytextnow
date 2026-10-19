@@ -16,13 +16,14 @@ Supported bundle formats:
   4. Direct cookie string (Cookie: connect.sid=...; _csrf=...)
 """
 
-import sys
+import json
 import os
 import re
-import json
+import sys
+import urllib.parse
 from pathlib import Path
 from typing import Dict, Optional, Tuple
-import urllib.parse
+
 from dotenv import load_dotenv
 
 # Optionally load .env if present, but never require it
@@ -46,7 +47,12 @@ def parse_raw_cookie_string(cookie_header: str) -> Dict[str, str]:
     """Parse a 'Cookie: key=value; key2=val2' string into a dictionary."""
     cookies = {}
     # Strip leading 'Cookie:' or '-H Cookie:'
-    cookie_header = re.sub(r"^(?:-H\s+)?['\"]?(?:Cookie:\s*)?", "", cookie_header.strip(), flags=re.IGNORECASE)
+    cookie_header = re.sub(
+        r"^(?:-H\s+)?['\"]?(?:Cookie:\s*)?",
+        "",
+        cookie_header.strip(),
+        flags=re.IGNORECASE,
+    )
     cookie_header = cookie_header.rstrip("'\";")
 
     for part in cookie_header.split(";"):
@@ -101,15 +107,21 @@ def extract_from_curl(curl_cmd: str) -> Tuple[Dict[str, str], Optional[str]]:
     cookies = {}
     user_agent = None
 
-    ua_match = re.search(r"-H\s+['\"]User-Agent:\s*([^'\"]+)['\"]", curl_cmd, re.IGNORECASE)
+    ua_match = re.search(
+        r"-H\s+['\"]User-Agent:\s*([^'\"]+)['\"]", curl_cmd, re.IGNORECASE
+    )
     if ua_match:
         user_agent = ua_match.group(1).strip()
 
-    cookie_matches = re.findall(r"-H\s+['\"]Cookie:\s*([^'\"]+)['\"]", curl_cmd, re.IGNORECASE)
+    cookie_matches = re.findall(
+        r"-H\s+['\"]Cookie:\s*([^'\"]+)['\"]", curl_cmd, re.IGNORECASE
+    )
     for c_str in cookie_matches:
         cookies.update(parse_raw_cookie_string(c_str))
 
-    cookie_flag_matches = re.findall(r"--cookie\s+['\"]([^'\"]+)['\"]", curl_cmd, re.IGNORECASE)
+    cookie_flag_matches = re.findall(
+        r"--cookie\s+['\"]([^'\"]+)['\"]", curl_cmd, re.IGNORECASE
+    )
     for c_str in cookie_flag_matches:
         cookies.update(parse_raw_cookie_string(c_str))
 
@@ -144,7 +156,9 @@ def extract_from_raw_text(text: str) -> Tuple[Dict[str, str], Optional[str]]:
             user_agent = ua_match.group(1).strip()
 
     # 4. Search for Cookie header lines
-    cookie_lines = re.findall(r"(?:^|\n)\s*(?:Cookie:|-H\s+['\"]Cookie:)\s*([^\r\n'\"]+)", text, re.IGNORECASE)
+    cookie_lines = re.findall(
+        r"(?:^|\n)\s*(?:Cookie:|-H\s+['\"]Cookie:)\s*([^\r\n'\"]+)", text, re.IGNORECASE
+    )
     for line in cookie_lines:
         cookies.update(parse_raw_cookie_string(line))
 
@@ -191,22 +205,26 @@ def save_and_update_project(
 
     # 1. Update session storage via SessionManager
     SessionManager.save_session(username, cookies, ua)
-    print(f"[+] Saved {len(cookies)} cookies to ~/.pythontextnow/session_{username}.json")
+    print(
+        f"[+] Saved {len(cookies)} cookies to ~/.pythontextnow/session_{username}.json"
+    )
 
     # 2. Update .env if requested and .env exists
     env_file = PROJECT_ROOT / ".env"
     if update_env and env_file.exists():
         try:
             content = env_file.read_text(encoding="utf-8")
-            pattern = r'TEXTNOW_SID_COOKIE\s*=\s*[^\r\n]+'
-            new_line = f'TEXTNOW_SID_COOKIE={sid}'
+            pattern = r"TEXTNOW_SID_COOKIE\s*=\s*[^\r\n]+"
+            new_line = f"TEXTNOW_SID_COOKIE={sid}"
             if re.search(pattern, content):
                 updated_content = re.sub(pattern, new_line, content)
             else:
                 updated_content = content + f"\n{new_line}\n"
             if username and "TEXTNOW_USERNAME=" in updated_content:
-                user_pattern = r'TEXTNOW_USERNAME\s*=\s*[^\r\n]+'
-                updated_content = re.sub(user_pattern, f'TEXTNOW_USERNAME={username}', updated_content)
+                user_pattern = r"TEXTNOW_USERNAME\s*=\s*[^\r\n]+"
+                updated_content = re.sub(
+                    user_pattern, f"TEXTNOW_USERNAME={username}", updated_content
+                )
             env_file.write_text(updated_content, encoding="utf-8")
             print("[+] Updated TEXTNOW_SID_COOKIE in .env!")
         except Exception as e:
@@ -230,7 +248,9 @@ def save_and_update_project(
             return True
         except Exception as e:
             print(f"[!] Verification check returned: {e}")
-            print("[*] Note: The cookie was saved. If TextNow requires cooldown, try running in a moment.")
+            print(
+                "[*] Note: The cookie was saved. If TextNow requires cooldown, try running in a moment."
+            )
             return False
     return True
 
@@ -249,16 +269,25 @@ def extract_and_save(
     """
     cookies, user_agent = extract_from_raw_text(raw_bundle)
     if cookies and username:
-        save_and_update_project(username, cookies, user_agent, update_env=update_env, validate=validate)
+        save_and_update_project(
+            username, cookies, user_agent, update_env=update_env, validate=validate
+        )
     return cookies, user_agent
 
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="TextNow connect.sid Extractor (Static Utility)")
+
+    parser = argparse.ArgumentParser(
+        description="TextNow connect.sid Extractor (Static Utility)"
+    )
     parser.add_argument("--username", default=None, help="TextNow username")
-    parser.add_argument("--bundle", default=None, help="Bundle text or path to HAR/cURL file")
-    parser.add_argument("--update-env", action="store_true", help="Update .env file on success")
+    parser.add_argument(
+        "--bundle", default=None, help="Bundle text or path to HAR/cURL file"
+    )
+    parser.add_argument(
+        "--update-env", action="store_true", help="Update .env file on success"
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -267,14 +296,20 @@ def main():
 
     target_username = args.username or os.environ.get("TEXTNOW_USERNAME")
     if not target_username:
-        target_username = input("Enter TextNow username (or press Enter if configured later): ").strip()
+        target_username = input(
+            "Enter TextNow username (or press Enter if configured later): "
+        ).strip()
 
     raw_input_text = args.bundle or ""
 
     if not raw_input_text:
         print("\nPlease paste your request bundle below.")
-        print("(You can paste a cURL command, raw HTTP request headers, a HAR file path, or the Cookie string)")
-        print("When finished, press Enter, then Ctrl+Z (Windows) or Ctrl+D, and press Enter:\n")
+        print(
+            "(You can paste a cURL command, raw HTTP request headers, a HAR file path, or the Cookie string)"
+        )
+        print(
+            "When finished, press Enter, then Ctrl+Z (Windows) or Ctrl+D, and press Enter:\n"
+        )
         try:
             raw_input_text = sys.stdin.read()
         except KeyboardInterrupt:
@@ -299,7 +334,9 @@ def main():
         print("Found cookies:", list(cookies.keys()))
         print("\nTip: In your browser DevTools -> Network tab:")
         print("  1. Click on any request to textnow.com (e.g. messaging or api/users)")
-        print("  2. Right click -> Copy -> Copy as cURL (bash), or copy the 'Cookie:' header")
+        print(
+            "  2. Right click -> Copy -> Copy as cURL (bash), or copy the 'Cookie:' header"
+        )
         print("  3. Run this script and paste it in!")
         return
 
@@ -308,7 +345,9 @@ def main():
     if "XSRF-TOKEN" in cookies:
         print(f"    - XSRF-TOKEN:  {cookies['XSRF-TOKEN'][:20]}...")
 
-    save_and_update_project(target_username, cookies, user_agent, update_env=args.update_env)
+    save_and_update_project(
+        target_username, cookies, user_agent, update_env=args.update_env
+    )
 
 
 if __name__ == "__main__":

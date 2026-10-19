@@ -38,7 +38,9 @@ class TestTextNowClass(TestCase):
         self.assertEqual("test_user", client.username)
         self.assertEqual("test_sid", client.sid_cookie)
 
-    @mock.patch.dict(os.environ, {"TEXTNOW_USERNAME": "env_user", "TEXTNOW_SID_COOKIE": "env_sid"})
+    @mock.patch.dict(
+        os.environ, {"TEXTNOW_USERNAME": "env_user", "TEXTNOW_SID_COOKIE": "env_sid"}
+    )
     @mock.patch("requests.get")
     def test_init_auto_load_env(self, mock_requests_get):
         mock_requests_get.return_value = MockResponse(dict(), 200, text="")
@@ -58,7 +60,9 @@ class TestTextNowClass(TestCase):
         }
         mock_requests_request.return_value = MockResponse(dummy_user, 200)
 
-        client = TextNow(username="test_user", sid_cookie="test_sid", auto_load_env=False)
+        client = TextNow(
+            username="test_user", sid_cookie="test_sid", auto_load_env=False
+        )
         user = client.get_user()
 
         self.assertIsInstance(user, User)
@@ -71,7 +75,9 @@ class TestTextNowClass(TestCase):
         mock_requests_get.return_value = MockResponse(dict(), 200, text="")
         mock_requests_request.return_value = MockResponse(dict(), 200)
 
-        client = TextNow(username="test_user", sid_cookie="test_sid", auto_load_env=False)
+        client = TextNow(
+            username="test_user", sid_cookie="test_sid", auto_load_env=False
+        )
         client.send_sms(to="+12025550143", message="Hello world!")
 
         self.assertTrue(mock_requests_request.called)
@@ -91,9 +97,13 @@ class TestTextNowClass(TestCase):
             "date": "2026-01-01T00:00:00Z",
             "conversation_filtering": {"first_time_contact": False},
         }
-        mock_requests_request.return_value = MockResponse({"messages": [mock_message]}, 200)
+        mock_requests_request.return_value = MockResponse(
+            {"messages": [mock_message]}, 200
+        )
 
-        client = TextNow(username="test_user", sid_cookie="test_sid", auto_load_env=False)
+        client = TextNow(
+            username="test_user", sid_cookie="test_sid", auto_load_env=False
+        )
         messages = client.get_messages(phone_number="+12025550143", limit=1)
 
         self.assertEqual(1, len(messages))
@@ -106,7 +116,9 @@ class TestTextNowClass(TestCase):
         mock_requests_get.return_value = MockResponse(dict(), 200, text="")
         mock_requests_request.return_value = MockResponse(dict(), 200)
 
-        client = TextNow(username="test_user", sid_cookie="test_sid", auto_load_env=False)
+        client = TextNow(
+            username="test_user", sid_cookie="test_sid", auto_load_env=False
+        )
         client.delete_message(message_id="msg_123")
 
         self.assertTrue(mock_requests_request.called)
@@ -134,7 +146,9 @@ class TestTextNowClass(TestCase):
     @mock.patch("tools.session_keepalive.ping_and_extend_session")
     def test_static_ping_keepalive(self, mock_ping):
         mock_ping.return_value = True
-        result = TextNow.ping_keepalive(username="user", sid_cookie="sid123", verbose=False)
+        result = TextNow.ping_keepalive(
+            username="user", sid_cookie="sid123", verbose=False
+        )
         self.assertTrue(result)
         mock_ping.assert_called_once_with(
             username="user",

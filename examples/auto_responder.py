@@ -7,6 +7,7 @@ import os
 import sys
 import time
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Ensure project root is on sys.path
@@ -22,7 +23,9 @@ recipient_phone = os.getenv("TEXTNOW_RECIPIENT_PHONE")
 
 if not username or not sid_cookie or not recipient_phone:
     print("[!] Configuration required:")
-    print("    Please configure TEXTNOW_USERNAME, TEXTNOW_SID_COOKIE, and TEXTNOW_RECIPIENT_PHONE in .env")
+    print(
+        "    Please configure TEXTNOW_USERNAME, TEXTNOW_SID_COOKIE, and TEXTNOW_RECIPIENT_PHONE in .env"
+    )
     sys.exit(1)
 
 from pythontextnow import TextNow
@@ -34,7 +37,9 @@ client = TextNow(username=username, sid_cookie=sid_cookie)
 
 
 def run_auto_responder(tn: TextNow, target_phone: str, poll_interval: int = 5):
-    print(f"[*] Starting auto-responder for {target_phone} (Polling every {poll_interval}s)...")
+    print(
+        f"[*] Starting auto-responder for {target_phone} (Polling every {poll_interval}s)..."
+    )
     print("[*] Press Ctrl+C to stop.\n")
 
     try:
@@ -42,7 +47,9 @@ def run_auto_responder(tn: TextNow, target_phone: str, poll_interval: int = 5):
             messages = tn.get_messages(phone_number=target_phone, limit=5)
             for msg in messages:
                 if msg.message_direction == MessageDirection.INCOMING and not msg.read:
-                    text = msg.text if isinstance(msg, TextMessage) else "[Media message]"
+                    text = (
+                        msg.text if isinstance(msg, TextMessage) else "[Media message]"
+                    )
                     print(f"[+] Received incoming message from {msg.number}: '{text}'")
 
                     # Mark incoming message as read

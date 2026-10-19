@@ -3,9 +3,10 @@ pythontextnow CLI Entry Point
 Run with: python -m pythontextnow
 """
 
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
 from pythontextnow._version import __version__
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -17,6 +18,7 @@ def main():
     print("-" * 55)
     try:
         from pythontextnow.tools.run import main as run_tools
+
         run_tools()
     except Exception:
         if TOOLS_RUN.exists():

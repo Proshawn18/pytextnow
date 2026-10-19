@@ -5,9 +5,9 @@ run.py
 Master CLI for TextNow Session Extraction & Keepalive (Zero Browser Overhead).
 """
 
-import sys
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -30,6 +30,7 @@ def print_banner():
 
 def check_status():
     from dotenv import load_dotenv
+
     load_dotenv()
     from pythontextnow.util.SessionManager import SessionManager
 
@@ -45,7 +46,9 @@ def check_status():
     cookies = SessionManager.load_session(username)
     sid = cookies.get("connect.sid", "") or os.environ.get("TEXTNOW_SID_COOKIE", "")
     if not sid:
-        sid = input(f"No cached session for '{username}'. Enter connect.sid (or press Enter to cancel): ").strip()
+        sid = input(
+            f"No cached session for '{username}'. Enter connect.sid (or press Enter to cancel): "
+        ).strip()
     if not sid:
         print(f"[!] No active session found for user '{username}'.")
         print("    Run Option [1] to extract your session.")

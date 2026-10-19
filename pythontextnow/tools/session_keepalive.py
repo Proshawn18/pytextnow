@@ -21,14 +21,15 @@ Usage:
      python tools/session_keepalive.py --username my_user --daemon --interval-hours 6
 """
 
-import os
-import sys
-import time
 import argparse
 import json
+import os
 import re
+import sys
+import time
 from pathlib import Path
-from typing import Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple
+
 import requests
 from dotenv import load_dotenv
 
@@ -36,7 +37,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent if (SCRIPT_DIR.parent / "setup.py").exists() else SCRIPT_DIR.parent.parent
+PROJECT_ROOT = (
+    SCRIPT_DIR.parent
+    if (SCRIPT_DIR.parent / "setup.py").exists()
+    else SCRIPT_DIR.parent.parent
+)
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -48,7 +53,9 @@ def load_session(username: str) -> Tuple[dict, str]:
     if not session_file or not session_file.exists():
         cwd_file = PROJECT_ROOT / f".textnow_session_{username}.json"
         if not cwd_file.exists():
-            raise FileNotFoundError(f"Session file not found for user '{username}'. Run extract_from_bundle.py first.")
+            raise FileNotFoundError(
+                f"Session file not found for user '{username}'. Run extract_from_bundle.py first."
+            )
         target = cwd_file
     else:
         target = session_file
@@ -58,7 +65,13 @@ def load_session(username: str) -> Tuple[dict, str]:
     return data.get("cookies", {}), data.get("user_agent", DEFAULT_USER_AGENT)
 
 
-def save_session(username: str, cookies: dict, user_agent: str, new_sid: Optional[str] = None, update_env: bool = False):
+def save_session(
+    username: str,
+    cookies: dict,
+    user_agent: str,
+    new_sid: Optional[str] = None,
+    update_env: bool = False,
+):
     if new_sid:
         cookies["connect.sid"] = new_sid
 
@@ -69,8 +82,8 @@ def save_session(username: str, cookies: dict, user_agent: str, new_sid: Optiona
         if env_file.exists():
             try:
                 content = env_file.read_text(encoding="utf-8")
-                pattern = r'TEXTNOW_SID_COOKIE\s*=\s*[^\r\n]+'
-                new_line = f'TEXTNOW_SID_COOKIE={new_sid}'
+                pattern = r"TEXTNOW_SID_COOKIE\s*=\s*[^\r\n]+"
+                new_line = f"TEXTNOW_SID_COOKIE={new_sid}"
                 if re.search(pattern, content):
                     updated_content = re.sub(pattern, new_line, content)
                 else:
@@ -179,18 +192,33 @@ def ping_and_extend_session(
         return False
 
 
-def ensure_session_alive(username: Optional[str] = None, sid_cookie: Optional[str] = None) -> bool:
+def ensure_session_alive(
+    username: Optional[str] = None, sid_cookie: Optional[str] = None
+) -> bool:
     """Convenience function to be called before running messaging automations."""
     return ping_and_extend_session(username=username, sid_cookie=sid_cookie)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="TextNow Zero-Overhead Session Keepalive (Static Utility)")
+    parser = argparse.ArgumentParser(
+        description="TextNow Zero-Overhead Session Keepalive (Static Utility)"
+    )
     parser.add_argument("--username", default=None, help="TextNow username")
     parser.add_argument("--sid", default=None, help="connect.sid cookie value")
-    parser.add_argument("--daemon", action="store_true", help="Run indefinitely in background")
-    parser.add_argument("--interval-hours", type=float, default=6.0, help="Interval between keepalive pings in daemon mode")
-    parser.add_argument("--update-env", action="store_true", help="Update .env file if new connect.sid is issued")
+    parser.add_argument(
+        "--daemon", action="store_true", help="Run indefinitely in background"
+    )
+    parser.add_argument(
+        "--interval-hours",
+        type=float,
+        default=6.0,
+        help="Interval between keepalive pings in daemon mode",
+    )
+    parser.add_argument(
+        "--update-env",
+        action="store_true",
+        help="Update .env file if new connect.sid is issued",
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -208,13 +236,19 @@ def main():
     sid = args.sid or os.environ.get("TEXTNOW_SID_COOKIE")
 
     if not args.daemon:
-        ping_and_extend_session(username=username, sid_cookie=sid, update_env=args.update_env)
+        ping_and_extend_session(
+            username=username, sid_cookie=sid, update_env=args.update_env
+        )
     else:
         interval_sec = int(args.interval_hours * 3600)
-        print(f"[*] Running in daemon mode for '{username}'. Pinging every {args.interval_hours} hours ({interval_sec} seconds).")
+        print(
+            f"[*] Running in daemon mode for '{username}'. Pinging every {args.interval_hours} hours ({interval_sec} seconds)."
+        )
         print("[*] Press Ctrl+C to stop.\n")
         while True:
-            ping_and_extend_session(username=username, sid_cookie=sid, update_env=args.update_env)
+            ping_and_extend_session(
+                username=username, sid_cookie=sid, update_env=args.update_env
+            )
             print(f"[*] Sleeping for {args.interval_hours} hours...\n")
             time.sleep(interval_sec)
 

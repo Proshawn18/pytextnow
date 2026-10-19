@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Dict, Generator, List, Optional, Tuple, Union
+
 from dotenv import load_dotenv
 
 from pythontextnow.api.Client import Client
@@ -109,9 +110,7 @@ class TextNow:
         conv = self.get_conversation(to)
         conv.send_media(file_path=file_path)
 
-    def get_messages(
-        self, *, phone_number: str, limit: int = 10
-    ) -> list[Message]:
+    def get_messages(self, *, phone_number: str, limit: int = 10) -> list[Message]:
         """
         Fetch the most recent messages from a conversation with the specified phone number.
         Returns a list of Message objects (newest to oldest).
