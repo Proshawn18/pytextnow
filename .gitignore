@@ -129,3 +129,13 @@ dmypy.json
 .pyre/
 
 *.dnc.py
+.textnow_session_*.json
+*.session.json
+.pythontextnow/
+.env
+.env.*
+!.env.example
+*.har
+curl.txt
+headers.txt
+

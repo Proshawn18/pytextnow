@@ -1,22 +1,16 @@
-## DISCLAIMER
+# Legal Disclaimer & Terms of Use Notice
 
-The library provided by pythontextnow ("we," "us," or "our") on https://github.com/joeyagreco/pythontextnow (the "Site")
-is for personal, regular use only.
-\
-\
-All actions and abilities in the library are provided in good faith, however we make no representation or warranty of
-any kind,
-express or
-implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information or
-capability in
-the library.
-\
-\
-This is intended to be used in the same way one would use [TextNow](https://www.textnow.com/) and should not be used
-maliciously or in any way that would violate their [Terms of Use](https://www.textnow.com/legal/terms).
-\
-\
-UNDER NO CIRCUMSTANCE SHALL WE HAVE ANY LIABILITY TO YOU FOR ANY LOSS OR DAMAGE OF ANY KIND INCURRED AS A RESULT OF THE
-USE OF THE LIBRARY AND SITE OR RELIANCE ON ANY INFORMATION PROVIDED ON THE SITE.
-\
-YOUR USE OF THE LIBRARY AND YOUR RELIANCE ON ANY INFORMATION ON THE SITE IS SOLELY AT YOUR OWN RISK.
+## Unofficial Library & Educational Purpose
+This repository (`pythontextnow`) provides an **unofficial** Python wrapper and automation utilities for the TextNow platform. It is developed solely for personal educational, interoperability, and reverse-engineering research purposes.
+
+This project is **not** affiliated with, authorized, maintained, sponsored, or endorsed by TextNow, Inc. or any of its affiliates or subsidiaries. "TextNow" and any related names, marks, emblems, and images are registered trademarks of their respective owners.
+
+## Terms of Service & Account Risk
+1. **Terms of Use**: Using automated scripts, bots, or unofficial API clients may violate [TextNow's Terms of Use](https://www.textnow.com/legal/terms).
+2. **Account Suspension & Bans**: Automated messaging, rapid SMS dispatching, or bulk messaging can trigger automated anti-abuse systems, carrier spam filters, or permanent account termination.
+3. **User Responsibility**: You, as the user of this library, are entirely and solely responsible for how you choose to use it. Do not use this tool for spam, harassment, unsolicited commercial messaging, or any unlawful activities.
+
+## No Warranty & Limitation of Liability
+The software and tools in this repository are provided "AS IS", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+
+In no event shall the authors, maintainers, or contributors be liable for any claim, damages, account suspensions, loss of phone numbers, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.

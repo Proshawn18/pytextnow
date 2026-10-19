@@ -3,7 +3,7 @@ import time
 from functools import wraps
 from typing import Callable
 
-from pythontextnow import Client
+from pythontextnow.api.Client import Client
 from pythontextnow.util.ConfigReader import ConfigReader
 from pythontextnow.util.CustomLogger import CustomLogger
 

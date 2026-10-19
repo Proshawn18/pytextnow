@@ -31,10 +31,10 @@ class TestTextNowAPI(TestCase):
             username="dummy_username", sid_cookie="dummy_sid_cookie"
         )
 
-    @mock.patch("requests.post")
-    def test_send_message_happy_path(self, mock_requests_post):
+    @mock.patch("requests.request")
+    def test_send_message_happy_path(self, mock_requests_request):
         mock_response = MockResponse(dict(), 200)
-        mock_requests_post.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.send_message.__wrapped__(
             text_now_api, message="hello world", send_to="5555555555"
@@ -42,13 +42,13 @@ class TestTextNowAPI(TestCase):
 
         self.assertIsNone(response)
 
-    @mock.patch("requests.get")
-    def test_get_messages_text_message_happy_path(self, mock_requests_get):
+    @mock.patch("requests.request")
+    def test_get_messages_text_message_happy_path(self, mock_requests_request):
         mock_message_dict = {
             "id": "id",
             "username": "username",
             "contact_value": "contact_value",
-            "message_direction": 2,
+            "message_direction": 1,
             "message_type": 1,
             "message": "hello world",
             "read": True,
@@ -57,7 +57,7 @@ class TestTextNowAPI(TestCase):
         }
         mock_response_dict = {"status": {}, "messages": [mock_message_dict]}
         mock_response = MockResponse(mock_response_dict, 200)
-        mock_requests_get.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.get_messages.__wrapped__(
             text_now_api,
@@ -83,13 +83,13 @@ class TestTextNowAPI(TestCase):
         self.assertEqual(mock_message_dict, message.raw)
         self.assertEqual("hello world", message.text)
 
-    @mock.patch("requests.get")
-    def test_get_messages_multi_media_message_happy_path(self, mock_requests_get):
+    @mock.patch("requests.request")
+    def test_get_messages_multi_media_message_happy_path(self, mock_requests_request):
         mock_message_dict = {
             "id": "id",
             "username": "username",
             "contact_value": "contact_value",
-            "message_direction": 2,
+            "message_direction": 1,
             "message_type": 2,
             "message": "https://test",
             "read": True,
@@ -98,7 +98,7 @@ class TestTextNowAPI(TestCase):
         }
         mock_response_dict = {"status": {}, "messages": [mock_message_dict]}
         mock_response = MockResponse(mock_response_dict, 200)
-        mock_requests_get.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.get_messages.__wrapped__(
             text_now_api,
@@ -124,10 +124,10 @@ class TestTextNowAPI(TestCase):
         self.assertEqual(mock_message_dict, message.raw)
         self.assertEqual("https://test", message.media)
 
-    @mock.patch("requests.patch")
-    def test_mark_message_as_read_happy_path(self, mock_requests_patch):
+    @mock.patch("requests.request")
+    def test_mark_message_as_read_happy_path(self, mock_requests_request):
         mock_response = MockResponse(dict(), 200)
-        mock_requests_patch.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         dummy_message = TextMessage(
             text=None,
@@ -146,10 +146,10 @@ class TestTextNowAPI(TestCase):
 
         self.assertIsNone(response)
 
-    @mock.patch("requests.delete")
-    def test_delete_message_happy_path(self, mock_requests_delete):
+    @mock.patch("requests.request")
+    def test_delete_message_happy_path(self, mock_requests_request):
         mock_response = MockResponse(dict(), 200)
-        mock_requests_delete.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.delete_message.__wrapped__(
             text_now_api, message_id="12345"
@@ -157,11 +157,11 @@ class TestTextNowAPI(TestCase):
 
         self.assertIsNone(response)
 
-    @mock.patch("requests.get")
-    def test_get_attachment_url_happy_path(self, mock_requests_get):
+    @mock.patch("requests.request")
+    def test_get_attachment_url_happy_path(self, mock_requests_request):
         mock_response_dict = {"result": "https://test"}
         mock_response = MockResponse(mock_response_dict, 200)
-        mock_requests_get.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.get_attachment_url.__wrapped__(
             text_now_api, message_type=MessageType.IMAGE
@@ -184,10 +184,10 @@ class TestTextNowAPI(TestCase):
 
         self.assertIsNone(response)
 
-    @mock.patch("requests.post")
-    def test_send_attachment_happy_path(self, mock_requests_post):
+    @mock.patch("requests.request")
+    def test_send_attachment_happy_path(self, mock_requests_request):
         mock_response = MockResponse(dict(), 200)
-        mock_requests_post.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.send_attachment.__wrapped__(
             text_now_api,
@@ -200,8 +200,8 @@ class TestTextNowAPI(TestCase):
 
         self.assertIsNone(response)
 
-    @mock.patch("requests.get")
-    def test_get_groups_happy_path(self, mock_requests_get):
+    @mock.patch("requests.request")
+    def test_get_groups_happy_path(self, mock_requests_request):
         dummy_group = {
             "title": "group",
             "avatar": {
@@ -227,7 +227,7 @@ class TestTextNowAPI(TestCase):
             "e164_contact_value": "+1111111111",
         }
         mock_response = MockResponse([dummy_group], 200)
-        mock_requests_get.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.get_groups.__wrapped__(text_now_api)
 
@@ -250,8 +250,8 @@ class TestTextNowAPI(TestCase):
         self.assertEqual("1111111111", response[0].contact_value)
         self.assertEqual("+1111111111", response[0].e164_contact_value)
 
-    @mock.patch("requests.get")
-    def test_get_user_happy_path(self, mock_requests_get):
+    @mock.patch("requests.request")
+    def test_get_user_happy_path(self, mock_requests_request):
         dummy_user = {
             "user_id": 123,
             "username": "user",
@@ -259,7 +259,7 @@ class TestTextNowAPI(TestCase):
             "phone_number": "1111111111",
         }
         mock_response = MockResponse(dummy_user, 200)
-        mock_requests_get.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.get_user.__wrapped__(text_now_api)
 
@@ -269,8 +269,8 @@ class TestTextNowAPI(TestCase):
         self.assertEqual("123@email.com", response.email)
         self.assertEqual("1111111111", response.phone_number)
 
-    @mock.patch("requests.post")
-    def test_create_group_happy_path(self, mock_requests_post):
+    @mock.patch("requests.request")
+    def test_create_group_happy_path(self, mock_requests_request):
         dummy_group = {
             "title": "group",
             "avatar": {
@@ -296,7 +296,7 @@ class TestTextNowAPI(TestCase):
             "e164_contact_value": "+1111111111",
         }
         mock_response = MockResponse(dummy_group, 200)
-        mock_requests_post.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.create_group.__wrapped__(
             text_now_api, phone_numbers=["1111111111"]
@@ -320,10 +320,10 @@ class TestTextNowAPI(TestCase):
         self.assertEqual("1111111111", response.contact_value)
         self.assertEqual("+1111111111", response.e164_contact_value)
 
-    @mock.patch("requests.delete")
-    def test_delete_conversation_happy_path(self, mock_requests_delete):
+    @mock.patch("requests.request")
+    def test_delete_conversation_happy_path(self, mock_requests_request):
         mock_response = MockResponse(dict(), 200)
-        mock_requests_delete.return_value = mock_response
+        mock_requests_request.return_value = mock_response
         text_now_api = TextNowAPI()
         response = text_now_api.delete_conversation.__wrapped__(
             text_now_api, conversation_phone_number="+1111111111"

@@ -6,6 +6,7 @@ class MockResponse:
         self.__data = data
         self.text = kwargs.pop("text", None)
         self.content = kwargs.pop("content", None)
+        self.cookies = kwargs.pop("cookies", {})
         self.status_code = status_code
 
     def json(self) -> dict | list:

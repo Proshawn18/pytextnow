@@ -17,6 +17,6 @@ setuptools.setup(
     long_description=read_me,
     license="MIT",
     include_package_data=True,
-    packages=setuptools.find_packages(exclude=("test", "docs")),
-    install_requires=["requests", "setuptools", "phonenumbers"],
+    packages=setuptools.find_packages(exclude=("test*", "docs*", "tools*")),
+    install_requires=["requests", "setuptools", "phonenumbers", "python-dotenv"],
 )

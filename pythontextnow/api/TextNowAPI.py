@@ -16,6 +16,7 @@ from pythontextnow.model.MultiMediaMessage import MultiMediaMessage
 from pythontextnow.model.TextMessage import TextMessage
 from pythontextnow.model.User import User
 from pythontextnow.util.ConfigReader import ConfigReader
+from pythontextnow.util.SessionManager import SessionManager
 
 
 class TextNowAPI:
@@ -37,29 +38,81 @@ class TextNowAPI:
     def __client_config(self) -> ClientConfig:
         return Client.get_client_config()
 
+    def _prepare_request_kwargs(self, **kwargs) -> dict:
+        config = self.__client_config
+        headers = dict(config.headers)
+        if "headers" in kwargs and kwargs["headers"]:
+            headers.update(kwargs["headers"])
+
+        cookies = dict(config.cookies)
+        if "cookies" in kwargs and kwargs["cookies"]:
+            cookies.update(kwargs["cookies"])
+
+        xsrf = cookies.get("XSRF-TOKEN") or cookies.get("_csrf")
+        if xsrf:
+            headers["x-xsrf-token"] = xsrf
+            headers["x-csrf-token"] = xsrf
+
+        if "Origin" not in headers:
+            headers["Origin"] = self.__BASE_URL
+        if "Referer" not in headers:
+            headers["Referer"] = f"{self.__BASE_URL}/messaging"
+        if "x-requested-with" not in headers:
+            headers["x-requested-with"] = "XMLHttpRequest"
+
+        kwargs["headers"] = headers
+        kwargs["cookies"] = cookies
+        return kwargs
+
+    def _execute_request(self, method: str, url: str, **kwargs) -> requests.Response:
+        req_kwargs = self._prepare_request_kwargs(**kwargs)
+        response = requests.request(method, url, **req_kwargs)
+
+        # Update cookies from response if any Set-Cookie headers are returned
+        if hasattr(response, "cookies") and response.cookies:
+            new_cookies = dict(response.cookies)
+            Client.update(cookies=new_cookies)
+
+        # Handle 403 CSRF token expiration
+        if response.status_code == 403:
+            try:
+                err_data = response.json()
+                if err_data.get("error_code") == "INVALID_CSRF_TOKEN":
+                    sid = self.__client_config.cookies.get("connect.sid", "")
+                    fetched_cookies, new_xsrf = SessionManager.fetch_csrf_tokens(
+                        sid, self.__client_config.user_agent
+                    )
+                    if fetched_cookies:
+                        Client.update(cookies=fetched_cookies)
+                        req_kwargs = self._prepare_request_kwargs(**kwargs)
+                        response = requests.request(method, url, **req_kwargs)
+            except Exception:
+                pass
+
+        return response
+
     @enforce_cooldown
     def send_message(self, *, message: str, send_to: str) -> None:
+        contact_value = send_to if send_to.startswith("+") else f"+{send_to}"
         json_data = {
-            "contact_value": send_to,
-            "contact_type": ContactType.DEFAULT.value,
+            "from_name": self.__client_config.username,
+            "has_video": False,
+            "reactions": [],
+            "reactionData": None,
+            "contact_value": contact_value,
             "message": message,
             "read": ReadStatus.READ.value,
             "message_direction": MessageDirection.OUTGOING.value,
             "message_type": MessageType.TEXT.value,
-            "from_name": self.__client_config.username,
-            "has_video": False,
             "new": True,
             "date": datetime.now().isoformat(),
         }
 
         data = {"json": json.dumps(json_data)}
+        headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}
 
-        response = requests.post(
-            f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__MESSAGES_ROUTE}",
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-            data=data,
-        )
+        url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__MESSAGES_ROUTE}"
+        response = self._execute_request("POST", url, headers=headers, data=data)
         response.raise_for_status()
 
     @enforce_cooldown
@@ -98,11 +151,7 @@ class TextNowAPI:
         base_url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__MESSAGES_ROUTE}"
         url_with_params = f"{base_url}?{urllib.parse.urlencode(params)}"
 
-        response = requests.get(
-            url_with_params,
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-        )
+        response = self._execute_request("GET", url_with_params)
         response.raise_for_status()
 
         message_dicts = response.json()["messages"]
@@ -123,16 +172,9 @@ class TextNowAPI:
         url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__CONVERSATIONS_ROUTE}/{clean_number}"
 
         params = {"latest_message_id": message.id_, "http_method": "PATCH"}
-
         data = {"read": True}
 
-        response = requests.patch(
-            url,
-            params=params,
-            data=data,
-            cookies=self.__client_config.cookies,
-            headers=self.__client_config.headers,
-        )
+        response = self._execute_request("PATCH", url, params=params, data=data)
         response.raise_for_status()
 
     @enforce_cooldown
@@ -140,13 +182,8 @@ class TextNowAPI:
         """
         Deletes the message with the given ID.
         """
-
         url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__MESSAGES_ROUTE}/{message_id}"
-        response = requests.delete(
-            url,
-            cookies=self.__client_config.cookies,
-            headers=self.__client_config.headers,
-        )
+        response = self._execute_request("DELETE", url)
         response.raise_for_status()
 
     @enforce_cooldown
@@ -158,11 +195,7 @@ class TextNowAPI:
         params = {"message_type": message_type.value}
         url_with_params = f"{url}?{parse.urlencode(params)}"
 
-        response = requests.get(
-            url_with_params,
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-        )
+        response = self._execute_request("GET", url_with_params)
         response.raise_for_status()
 
         return response.json()["result"]
@@ -216,23 +249,13 @@ class TextNowAPI:
         }
 
         url = f"{self.__BASE_URL}{self.__API_ROUTE}/{self.__VERSION}{self.__SEND_ATTACHMENT_ROUTE}"
-
-        response = requests.post(
-            url,
-            data=data,
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-        )
+        response = self._execute_request("POST", url, data=data)
         response.raise_for_status()
 
     @enforce_cooldown
     def get_groups(self) -> list[Group]:
         url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__GROUPS_ROUTE}"
-        response = requests.get(
-            url,
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-        )
+        response = self._execute_request("GET", url)
         response.raise_for_status()
 
         group_list = list()
@@ -243,11 +266,7 @@ class TextNowAPI:
     @enforce_cooldown
     def get_user(self) -> User:
         url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}"
-        response = requests.get(
-            url,
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-        )
+        response = self._execute_request("GET", url)
         response.raise_for_status()
 
         return User.from_dict(response.json())
@@ -260,7 +279,6 @@ class TextNowAPI:
         url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__GROUPS_ROUTE}"
 
         data = {"json": {"members": list()}}
-
         for phone_number in phone_numbers:
             member = {
                 "contact_value": phone_number,
@@ -269,15 +287,10 @@ class TextNowAPI:
             data["json"]["members"].append(member)
 
         data = parse.urlencode(data, quote_via=urllib.parse.quote)
-        # we add this step because of a weird issue: https://qxf2.com/blog/python-mechanize-replace/
         data = data.replace("%27", "%22")
 
-        headers = self.__client_config.headers
-        headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
-
-        response = requests.post(
-            url, data=data, headers=headers, cookies=self.__client_config.cookies
-        )
+        headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}
+        response = self._execute_request("POST", url, data=data, headers=headers)
         response.raise_for_status()
 
         return Group.from_dict(response.json())
@@ -293,10 +306,5 @@ class TextNowAPI:
             else conversation_phone_number[1:]
         )
         url = f"{self.__BASE_URL}{self.__API_ROUTE}{self.__USERS_ROUTE}/{self.__client_config.username}{self.__CONVERSATIONS_ROUTE}/%2B{conversation_phone_number}"
-
-        response = requests.delete(
-            url,
-            headers=self.__client_config.headers,
-            cookies=self.__client_config.cookies,
-        )
+        response = self._execute_request("DELETE", url)
         response.raise_for_status()
